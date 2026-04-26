@@ -5,18 +5,17 @@ const app = express();
 
 app.use(express.static(path.join(__dirname, 'public')));
 
-// This acts like the PowerPoint engine
 app.use('/service', (req, res, next) => {
     const targetUrl = req.query.url;
     if (!targetUrl) return res.send("Enter a URL");
 
     return createProxyMiddleware({
         target: targetUrl,
-        changeOrigin: true,
+        changeOrigin: true, // This is crucial for fixing the "jumble"
         followRedirects: true,
+        autoRewrite: true,  // Helps fix the links inside the game
         pathRewrite: { '^/service': '' },
         onProxyRes: (proxyRes) => {
-            // This "kills" the security headers that cause white screens
             delete proxyRes.headers['x-frame-options'];
             delete proxyRes.headers['content-security-policy'];
         },
@@ -27,4 +26,4 @@ app.use('/service', (req, res, next) => {
 });
 
 const PORT = process.env.PORT || 10000;
-app.listen(PORT);
+app.listen(PORT, () => console.log(`Server running on ${PORT}`));
