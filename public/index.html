@@ -3,56 +3,101 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>My Web Proxy</title>
+    <title>Web Viewer Proxy</title>
     <style>
-        body { font-family: sans-serif; margin: 20px; background-color: #f4f4f9; }
-        .controls { display: flex; gap: 10px; margin-bottom: 20px; }
-        input { flex-grow: 1; padding: 10px; border: 1px solid #ccc; border-radius: 4px; }
-        button { padding: 10px 20px; cursor: pointer; background: #007bff; color: white; border: none; border-radius: 4px; }
+        /* Make the app take up the whole screen */
+        body, html { 
+            margin: 0; 
+            padding: 0; 
+            height: 100%; 
+            width: 100%;
+            overflow: hidden; 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #1a1a1a;
+        }
+
+        /* Top Navigation Bar */
+        #nav-bar { 
+            background: #2d2d2d; 
+            padding: 10px; 
+            display: flex; 
+            gap: 10px; 
+            align-items: center;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.5);
+            height: 50px;
+            box-sizing: border-box;
+        }
+
+        input { 
+            flex: 1; 
+            padding: 8px 12px; 
+            border-radius: 4px; 
+            border: 1px solid #444; 
+            background: #3d3d3d;
+            color: white;
+            outline: none;
+        }
+
+        input:focus { border-color: #007bff; }
+
+        button { 
+            padding: 8px 20px; 
+            cursor: pointer; 
+            background: #007bff; 
+            color: white; 
+            border: none; 
+            border-radius: 4px; 
+            font-weight: bold;
+            transition: background 0.2s;
+        }
+
         button:hover { background: #0056b3; }
-        #viewer { width: 100%; height: 80vh; border: 1px solid #ddd; background: white; overflow: auto; padding: 10px; }
+
+        /* The "PowerPoint" style window */
+        iframe { 
+            width: 100%; 
+            height: calc(100vh - 50px); 
+            border: none; 
+            background: white;
+        }
     </style>
 </head>
 <body>
 
-    <h2>Web Proxy Browser</h2>
-    <p>Enter a full URL (including http:// or https://) below:</p>
-
-    <div class="controls">
-        <input type="text" id="urlInput" placeholder="https://www.wikipedia.org">
-        <button onclick="loadPage()">Go</button>
+    <div id="nav-bar">
+        <input type="text" id="urlInput" placeholder="Enter URL (e.g., https://www.wikipedia.org)">
+        <button onclick="launchSite()">Go</button>
     </div>
 
-    <div id="viewer">
-        <p style="color: #666;">Site content will load here...</p>
-    </div>
+    <iframe id="siteViewer" src="about:blank"></iframe>
 
     <script>
-        async function loadPage() {
-            const url = document.getElementById('urlInput').value;
-            const viewer = document.getElementById('viewer');
+        function launchSite() {
+            const urlInput = document.getElementById('urlInput').value;
+            const viewer = document.getElementById('siteViewer');
 
-            if (!url) {
-                alert("Please enter a URL!");
+            if (!urlInput) {
+                alert("Please enter a URL first!");
                 return;
             }
 
-            viewer.innerHTML = "<p>Loading...</p>";
-
-            try {
-                // This fetches the content from your server's /proxy route
-                const response = await fetch(`/proxy?url=${encodeURIComponent(url)}`);
-                
-                if (!response.ok) throw new Error("Failed to fetch.");
-
-                const html = await response.text();
-                
-                // Inject the HTML into the viewer div
-                viewer.innerHTML = html;
-            } catch (err) {
-                viewer.innerHTML = `<p style="color:red;">Error: ${err.message}</p>`;
+            // Clean up the URL if the user forgot https://
+            let finalUrl = urlInput;
+            if (!finalUrl.startsWith('http://') && !finalUrl.startsWith('https://')) {
+                finalUrl = 'https://' + finalUrl;
             }
+
+            // Send the URL through our proxy service
+            // This matches the '/service' route in your server.js
+            viewer.src = "/service?url=" + encodeURIComponent(finalUrl);
         }
+
+        // Allow pressing "Enter" to trigger the button
+        document.getElementById("urlInput").addEventListener("keyup", function(event) {
+            if (event.key === "Enter") {
+                launchSite();
+            }
+        });
     </script>
 </body>
 </html>
