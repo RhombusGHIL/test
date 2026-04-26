@@ -9,21 +9,28 @@ app.use('/service', (req, res, next) => {
     const targetUrl = req.query.url;
     if (!targetUrl) return res.send("Enter a URL");
 
+    // Extract the base domain (e.g., https://2048game.com)
+    const urlObj = new URL(targetUrl);
+    const origin = urlObj.origin;
+
     return createProxyMiddleware({
-        target: targetUrl,
-        changeOrigin: true, // This is crucial for fixing the "jumble"
+        target: origin,
+        changeOrigin: true,
         followRedirects: true,
-        autoRewrite: true,  // Helps fix the links inside the game
-        pathRewrite: { '^/service': '' },
+        // This fixes the "jumble" by forcing headers to match the game site
+        onProxyReq: (proxyReq) => {
+            proxyReq.setHeader('origin', origin);
+            proxyReq.setHeader('referer', origin);
+        },
         onProxyRes: (proxyRes) => {
+            // Delete security that blocks images and frames
             delete proxyRes.headers['x-frame-options'];
             delete proxyRes.headers['content-security-policy'];
+            delete proxyRes.headers['content-security-policy-report-only'];
         },
-        onError: (err, req, res) => {
-            res.status(500).send("Proxy error: " + err.message);
-        }
+        pathRewrite: () => urlObj.pathname + urlObj.search, 
     })(req, res, next);
 });
 
 const PORT = process.env.PORT || 10000;
-app.listen(PORT, () => console.log(`Server running on ${PORT}`));
+app.listen(PORT);
