@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Web Proxy</title>
+    <style>
+        body { font-family: sans-serif; margin: 20px; background-color: #f4f4f9; }
+        .controls { display: flex; gap: 10px; margin-bottom: 20px; }
+        input { flex-grow: 1; padding: 10px; border: 1px solid #ccc; border-radius: 4px; }
+        button { padding: 10px 20px; cursor: pointer; background: #007bff; color: white; border: none; border-radius: 4px; }
+        button:hover { background: #0056b3; }
+        #viewer { width: 100%; height: 80vh; border: 1px solid #ddd; background: white; overflow: auto; padding: 10px; }
+    </style>
+</head>
+<body>
+
+    <h2>Web Proxy Browser</h2>
+    <p>Enter a full URL (including http:// or https://) below:</p>
+
+    <div class="controls">
+        <input type="text" id="urlInput" placeholder="https://www.wikipedia.org">
+        <button onclick="loadPage()">Go</button>
+    </div>
+
+    <div id="viewer">
+        <p style="color: #666;">Site content will load here...</p>
+    </div>
+
+    <script>
+        async function loadPage() {
+            const url = document.getElementById('urlInput').value;
+            const viewer = document.getElementById('viewer');
+
+            if (!url) {
+                alert("Please enter a URL!");
+                return;
+            }
+
+            viewer.innerHTML = "<p>Loading...</p>";
+
+            try {
+                // This fetches the content from your server's /proxy route
+                const response = await fetch(`/proxy?url=${encodeURIComponent(url)}`);
+                
+                if (!response.ok) throw new Error("Failed to fetch.");
+
+                const html = await response.text();
+                
+                // Inject the HTML into the viewer div
+                viewer.innerHTML = html;
+            } catch (err) {
+                viewer.innerHTML = `<p style="color:red;">Error: ${err.message}</p>`;
+            }
+        }
+    </script>
+</body>
+</html>
